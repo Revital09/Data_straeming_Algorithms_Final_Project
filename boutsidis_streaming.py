@@ -222,6 +222,7 @@ class Boutsidis_Streaming(Algo):
         return Result(
             centers=centers_orig.astype(np.float32),
             runtime_sec=t1 - t0,
+            memory=float(state_bytes),
             cost_sse=float(cost_sse),
             cost_ratio_vs_kmeans=float("nan"),
             ari=ari,
@@ -238,6 +239,7 @@ class Boutsidis_Streaming(Algo):
                 "stream_is_single_pass": bool(single_pass),
                 "avg_update_ms": float(avg_update_ms),
                 "state_bytes": int(state_bytes),
+                "memory_mb": float(state_bytes / (1024.0 ** 2)),
             },
         )
 
