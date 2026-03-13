@@ -1,2 +1,0 @@
-chunk_size,beta,gamma,runtime_sec_mean,runtime_sec_std,memory_mean,memory_std,cost_sse_mean,cost_sse_std,quality_mean,quality_std,num_phases_mean,final_summary_size_mean,final_lower_bound_mean,avg_update_ms_mean,avg_update_ms_std,points_seen_mean,ari_mean,nmi_mean,quality_norm,runtime_norm,memory_norm,tradeoff_score
-64,10.0,20.0,0.22700905008241534,0.004579435531903824,11200.0,0.0,1109.7623357480143,0.0,1.0,0.0,1.0,200.0,0.8127899870337071,1.1350452504120767,0.022897177659519118,200.0,1.0,1.0,0.0,0.0,0.0,0.0

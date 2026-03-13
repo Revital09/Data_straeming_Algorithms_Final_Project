@@ -234,15 +234,15 @@ def tune_charikar_parameters(
 
 
 def main():
-    X, y = make_blobs(
-        n_samples=10000,
-        centers=8,
-        n_features=10,
-        cluster_std=2.0,
-        random_state=42,
-    )
+    d = 10
+    n = 10_000
+    X, y = make_blobs(n_samples=n, centers=8, n_features=2, cluster_std=1.5, random_state=321)
+    A = np.array([[0.6, -0.8], [0.4, 0.9]])
+    X = X @ A
+    rng = np.random.default_rng(123)
+    if d > 2:
+        X = np.hstack([X, rng.normal(0, 0.1, size=(n, d - 2))])
 
-    X = X.astype("float32")
 
     best_df = tune_charikar_parameters(
         samples=X,
