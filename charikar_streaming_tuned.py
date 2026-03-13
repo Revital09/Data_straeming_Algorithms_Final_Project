@@ -83,7 +83,7 @@ def tune_charikar_parameters(
     k: int,
     output_dir: str,
     labels=None,
-    chunk_size: int = 1000,
+    chunk_size: int = 4092,
     beta_values=(5.0, 10.0, 25.0),
     gamma_values=(20.0, 50.0, 100.0),
     seeds=(42, 77, 211),
@@ -144,6 +144,7 @@ def tune_charikar_parameters(
                         "avg_update_ms": float(extra.get("avg_update_ms", np.nan)),
                     }
                 )
+            print(f"Finished beta={beta}, gamma={gamma}")
 
     df_all = pd.DataFrame(rows)
     df_all.to_csv(os.path.join(output_dir, "charikar_all_results.csv"), index=False)
@@ -236,7 +237,7 @@ def main():
     X, y = make_blobs(
         n_samples=10000,
         centers=8,
-        n_features=20,
+        n_features=10,
         cluster_std=2.0,
         random_state=42,
     )
@@ -248,9 +249,9 @@ def main():
         k=8,
         output_dir="output/charikar_blobs",
         labels=y,
-        chunk_size=1000,
-        beta_values=(5.0, 10.0, 25.0),
-        gamma_values=(20.0, 50.0, 100.0),
+        chunk_size=4092,
+        beta_values=(3.0, 5.0, 25.0),
+        gamma_values=(10.0, 30.0, 100.0),
         seeds=(42, 77, 211),
         quality_weight=0.5,
         runtime_weight=0.25,
