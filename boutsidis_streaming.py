@@ -135,6 +135,7 @@ class Boutsidis_Streaming(Algo):
             if not initialized:
                 d = int(Xb.shape[1])
                 r, R, km, state = self._init_models(d=d, k=k, rng=rng)
+                print(f"value of d={d}, k={k}, eps={self.eps}, c2={self.c2} and r={r}")
                 self.R_, self.km_, self.state_ = R, km, state
                 initialized = True
 
@@ -239,7 +240,6 @@ class Boutsidis_Streaming(Algo):
                 "stream_is_single_pass": bool(single_pass),
                 "avg_update_ms": float(avg_update_ms),
                 "state_bytes": int(state_bytes),
-                "memory_mb": float(state_bytes / (1024.0 ** 2)),
             },
         )
 
