@@ -1,4 +1,3 @@
-from results import Algo, Result
 import os
 import json
 import numpy as np
@@ -6,71 +5,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from ailon_updated import Ailon_Coreset
 from sklearn.datasets import make_blobs
-
-
-def _extract_quality(result: Result) -> float:
-    """
-    Higher is better.
-    Priority:
-    1) NMI
-    2) ARI
-    3) negative SSE
-    """
-    if result.nmi is not None:
-        return float(result.nmi)
-    if result.ari is not None:
-        return float(result.ari)
-    return -float(result.cost_sse)
-
-
-def _minmax_normalize(s: pd.Series) -> pd.Series:
-    s = s.astype(float)
-    mn = s.min()
-    mx = s.max()
-    if abs(mx - mn) < 1e-12:
-        return pd.Series(np.zeros(len(s)), index=s.index)
-    return (s - mn) / (mx - mn)
-
-
-def pick_best_overall(
-    agg: pd.DataFrame,
-    quality_col: str = "quality_mean",
-    runtime_col: str = "runtime_sec_mean",
-    memory_col: str = "memory_mean",
-    quality_weight: float = 0.5,
-    runtime_weight: float = 0.25,
-    memory_weight: float = 0.25,
-):
-    """
-    Rank all parameter combinations by one weighted tradeoff score.
-
-    Higher quality is better.
-    Lower runtime is better.
-    Lower memory is better.
-
-    Returns:
-        scored_df: all combinations with normalized metrics and tradeoff_score
-        best_one_df: a one-row dataframe with the best overall combination
-    """
-    df = agg.copy()
-
-    df["quality_norm"] = _minmax_normalize(df[quality_col])
-    df["runtime_norm"] = _minmax_normalize(df[runtime_col])
-    df["memory_norm"] = _minmax_normalize(df[memory_col])
-
-    df["tradeoff_score"] = (
-        quality_weight * df["quality_norm"]
-        - runtime_weight * df["runtime_norm"]
-        - memory_weight * df["memory_norm"]
-    )
-
-    df = df.sort_values(
-        by=["tradeoff_score", quality_col, runtime_col, memory_col],
-        ascending=[False, False, True, True]
-    ).reset_index(drop=True)
-
-    best_one = df.head(1).copy()
-    return df, best_one
+from tuned_utils import extract_quality, pick_best_overall
 
 
 def tune_ailon_parameters(
@@ -116,7 +51,7 @@ def tune_ailon_parameters(
                 )
 
                 result = algo.fit(samples=samples, k=k, rng=rng, labels=labels)
-                quality = _extract_quality(result)
+                quality = extract_quality(result)
 
                 rows.append({
                     "seed": int(seed),
