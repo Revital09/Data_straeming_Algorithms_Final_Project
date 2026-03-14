@@ -3,9 +3,9 @@ import json
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from ailon_updated import Ailon_Coreset
+from ailon_coreset import Ailon_Coreset
 from sklearn.datasets import make_blobs
-from tuned_utils import extract_quality, pick_best_overall
+from utils import extract_quality, pick_best_overall
 
 
 def tune_ailon_parameters(
@@ -70,6 +70,7 @@ def tune_ailon_parameters(
                     "coreset_per_round": int(result.extra.get("coreset_per_round", -1)) if result.extra else -1,
                     "repetitions": int(result.extra.get("repetitions", -1)) if result.extra else -1,
                 })
+            print(f"Completed coreset_factor={cf}, repeat_factor={rf}")
 
     df_all = pd.DataFrame(rows)
     df_all.to_csv(os.path.join(output_dir, "ailon_all_results.csv"), index=False)
@@ -165,8 +166,8 @@ def main():
         k=8,
         output_dir="output/ailon_blobs",
         labels=y,
-        coreset_factors=(1.0, 2.0, 3.0),
-        repeat_factors=(1.0, 2.0, 3.0),
+        coreset_factors=(1.0, 1.5, 2.0),
+        repeat_factors=(0.75, 1.0, 1.5),
         seeds=(42, 77, 211),
         quality_weight=0.5,
         runtime_weight=0.25,

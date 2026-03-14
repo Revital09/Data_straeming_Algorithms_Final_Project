@@ -1,75 +1,101 @@
 from __future__ import annotations
 import numpy as np
 import pandas as pd
+
+from kmeans import KMeansAlgo
+from guha_stream import Guha_Stream_KMeans
+from ailon_coreset import Ailon_Coreset
+from boutsidis_streaming import Boutsidis_Streaming
+from charikar_streaming import Charikar_KMeans
+from guha_stream_tuned import tune_guha_parameters
+from ailon_tuned import tune_ailon_parameters
+from boutsidis_streaming_tuned import tune_boutsidis_parameters
+from charikar_streaming_tuned import tune_charikar_parameters
 from results import Result
+from sklearn.datasets import make_blobs
 
-
-def extract_quality(result: Result) -> float:
+def tuned_algorithms():
     """
-    Higher is better.
+    Return the best parameters for each algorithm, based on the tuning results.
 
     Priority:
     1) NMI
     2) ARI
     3) negative SSE
-    """
-    if result.nmi is not None:
-        return float(result.nmi)
+    """ 
+    d = 10
+    n = 10_000
+    X, y = make_blobs(n_samples=n, centers=8, n_features=2, cluster_std=1.5, random_state=321)
+    A = np.array([[0.6, -0.8], [0.4, 0.9]])
+    X = X @ A
+    rng = np.random.default_rng(123)
+    if d > 2:
+        X = np.hstack([X, rng.normal(0, 0.1, size=(n, d - 2))])
 
-    if result.ari is not None:
-        return float(result.ari)
-
-    return -float(result.cost_sse)
-
-
-def minmax_normalize(s: pd.Series) -> pd.Series:
-    """
-    Normalize series to [0,1]
-    """
-    s = s.astype(float)
-    mn = s.min()
-    mx = s.max()
-
-    if abs(mx - mn) < 1e-12:
-        return pd.Series(np.zeros(len(s)), index=s.index)
-
-    return (s - mn) / (mx - mn)
-
-
-def pick_best_overall(
-    agg: pd.DataFrame,
-    quality_col: str = "quality_mean",
-    runtime_col: str = "runtime_sec_mean",
-    memory_col: str = "memory_mean",
-    quality_weight: float = 0.5,
-    runtime_weight: float = 0.25,
-    memory_weight: float = 0.25,
-):
-    """
-    Rank parameter combinations by a weighted tradeoff score.
-
-    Higher quality is better.
-    Lower runtime is better.
-    Lower memory is better.
-    """
-
-    df = agg.copy()
-
-    df["quality_norm"] = minmax_normalize(df[quality_col])
-    df["runtime_norm"] = minmax_normalize(df[runtime_col])
-    df["memory_norm"] = minmax_normalize(df[memory_col])
-
-    df["tradeoff_score"] = (
-        quality_weight * df["quality_norm"]
-        - runtime_weight * df["runtime_norm"]
-        - memory_weight * df["memory_norm"]
+    algos = [KMeansAlgo(max_iter=300)]
+    ailon_df = tune_ailon_parameters(
+        samples=X,
+        k=8,
+        output_dir="output/ailon_blobs",
+        labels=y,
+        coreset_factors=(1.0, 1.5, 2.0),
+        repeat_factors=(0.75, 1.0, 1.5),
+        seeds=(42, 77, 211),
+        quality_weight=0.5,
+        runtime_weight=0.25,
+        memory_weight=0.25,
     )
+    algos.append(Ailon_Coreset(chunk_size=8192,coreset_factor=ailon_df.iloc[0]["coreset_factor"],
+                                repeat_factor=ailon_df.iloc[0]["repeat_factor"]))
+    print(ailon_df.iloc[0]["coreset_factor"], ailon_df.iloc[0]["repeat_factor"])
+    boutsidis_df = tune_boutsidis_parameters(
+        samples=X,
+        k=8,
+        r_min=2,
+        output_dir="output/boutsidis_blobs",
+        labels=y,
+        eps_values = (1.5, 2.5, 3.5),
+        c2_values = (1.0, 2.0, 3.0),
+        seeds=(42, 77, 211),
+        quality_weight=0.5,
+        runtime_weight=0.25,
+        memory_weight=0.25,
+    )
+    print(boutsidis_df.iloc[0]["eps"], boutsidis_df.iloc[0]["c2"])
+    algos.append(Boutsidis_Streaming(eps=boutsidis_df.iloc[0]["eps"], c2=boutsidis_df.iloc[0]["c2"], chunk_size=8192))
 
-    df = df.sort_values(
-        by=["tradeoff_score", quality_col, runtime_col, memory_col],
-        ascending=[False, False, True, True],
-    ).reset_index(drop=True)
+    guha_df = tune_guha_parameters(
+        samples=X,
+        k=14,
+        output_dir="output/guha_blobs",
+        labels=y,
+        chunk_size=4096,
+        m_factor_values=(1.0, 2.0, 3.0, 4.0, 5.0),
+        seeds=(42, 77, 211),
+        quality_weight=0.5,
+        runtime_weight=0.25,
+        memory_weight=0.25,
+    )
+    print(guha_df.iloc[0]["m_factor"])
+    algos.append(Guha_Stream_KMeans(chunk_size=8192, m_factor=guha_df.iloc[0]["m_factor"]))
 
-    best_one = df.head(1).copy()
+    charikar_df = tune_charikar_parameters(
+        samples=X,
+        k=8,
+        output_dir="output/charikar_blobs",
+        labels=y,
+        chunk_size=4092,
+        beta_values=(3.0, 5.0, 25.0),
+        gamma_values=(10.0, 30.0, 100.0),
+        seeds=(42, 77, 211),
+        quality_weight=0.5,
+        runtime_weight=0.25,
+        memory_weight=0.25,
+    )
+    print(charikar_df.iloc[0]["beta"], charikar_df.iloc[0]["gamma"])
+    algos.append(Charikar_KMeans(beta=charikar_df.iloc[0]["beta"], gamma=charikar_df.iloc[0]["gamma"], chunk_size=8192))
+    return algos
 
-    return df, best_one
+if __name__ == "__main__":
+    algo = tuned_algorithms()
+    print("done tuning the algorithms")

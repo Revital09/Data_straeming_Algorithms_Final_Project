@@ -9,6 +9,7 @@ from typing import Dict, List, Tuple, Any
 
 import numpy as np
 
+from tuned_utils import tuned_algorithms
 from utils import set_seed
 from data import make_datasets
 
@@ -24,7 +25,7 @@ from charikar_streaming import Charikar_KMeans
 # CONFIG
 # ============================================================
 
-OUTPUT_DIR = "results_Heavy"
+OUTPUT_DIR = "results"
 SWEEP_ID = "Kmeans_sweep"
 
 STREAM_MODEL = "insertion-only"   # ✅ requirement 1
@@ -45,17 +46,18 @@ BOUTSIDIS_EPS_VALUES = [0.3, 0.5, 0.8]
 # ALGORITHMS
 # ============================================================
 
-def build_algos(k: int, eps_boutsidis: float):
+def build_algos():
     """
     Build algorithms list.
     eps_boutsidis is swept for ablation.
     """
+    
     algos = [
-        KMeansAlgo(max_iter=200),  # baseline
+        KMeansAlgo(max_iter=300),  # baseline
         MiniBatchKMeansAlgo(batch_size=8192, max_iter=100),
         Guha_Stream_KMeans(chunk_size=8192, m_factor=2.0),
         Ailon_Coreset(chunk_size=8192),
-        Boutsidis_Streaming(eps=eps_boutsidis, c2=8.0, chunk_size=1024),
+        Boutsidis_Streaming(eps=1.5, c2=8.0, chunk_size=1024),
     ]
     if ENABLE_CHARIKAR_16:
         algos.append(Charikar_KMeans(beta=25, gamma=100.0, chunk_size=8192))
@@ -165,16 +167,15 @@ def run_with_measurements(algo, X: np.ndarray, y: np.ndarray | None, k: int, rng
 # EXPERIMENT CORE
 # ============================================================
 
-def run_one_dataset_once(X: np.ndarray, y: np.ndarray | None, k: int, seed: int, eps_boutsidis: float):
+def run_one_dataset_once(X: np.ndarray, y: np.ndarray | None, k: int, seed: int, algorithms) -> Dict[str, Any]:
     rng = set_seed(seed)
-    algos = build_algos(k, eps_boutsidis=eps_boutsidis)
 
     # baseline
-    kmeans = run_with_measurements(algos[0], X, y, k, rng)
+    kmeans = run_with_measurements(algorithms[0], X, y, k, rng)
     kmeans_cost = kmeans.cost_sse
 
-    results = {algos[0].name: kmeans}
-    for algo in algos[1:]:
+    results = {algorithms[0].name: kmeans}
+    for algo in algorithms[1:]:
         res = run_with_measurements(algo, X, y, k, rng)
         res.cost_ratio_vs_kmeans = res.cost_sse / (kmeans_cost + 1e-12)
         results[algo.name] = res
@@ -224,29 +225,29 @@ def main():
     ensure_dir(OUTPUT_DIR)
 
     raw_rows: List[Dict[str, Any]] = []
-
+    print("tuning the parameters of the algorithms")
+    algorithems = tuned_algorithms()
     for n, d, k in itertools.product(N_VALUES, D_VALUES, K_VALUES):
         rng_gen = set_seed(1234 + 17 * k + 3 * d + (n % 1000))
         datasets = make_datasets(rng_gen, n=n, d=d, k_true=k)
         datasets = {name: datasets[name] for name in DATASET_NAMES if name in datasets}
 
         for dataset_name, (X, y) in datasets.items():
-            for eps in BOUTSIDIS_EPS_VALUES:   # ✅ ablation loop
-                for seed in SEEDS:
-                    results = run_one_dataset_once(X, y, k=k, seed=seed, eps_boutsidis=eps)
-                    for algo_name, res in results.items():
-                        raw_rows.append(
-                            flatten_result(
-                                sweep_id=SWEEP_ID,
-                                dataset_name=dataset_name,
-                                n=n,
-                                d=d,
-                                k=k,
-                                seed=seed,
-                                algo_name=algo_name,
-                                res=res
-                            )
+            for seed in SEEDS:
+                results = run_one_dataset_once(X, y, k=k, seed=seed, algorithms=algorithems)
+                for algo_name, res in results.items():
+                    raw_rows.append(
+                        flatten_result(
+                            sweep_id=SWEEP_ID,
+                            dataset_name=dataset_name,
+                            n=n,
+                            d=d,
+                            k=k,
+                            seed=seed,
+                            algo_name=algo_name,
+                            res=res
                         )
+                    )
             print(f"Completed dataset={dataset_name} for n={n}, d={d}, k={k}")
 
     # Write raw only (minimal). If you want agg/summary again, keep your old funcs.
