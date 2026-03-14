@@ -20,11 +20,13 @@ SWEEP_ID = "Kmeans_sweep"
 STREAM_MODEL = "insertion-only"
 
 SEEDS = [42, 77, 211]
-N_VALUES = [10_000, 30_000]
-D_VALUES = [10, 25]
-K_VALUES = [8, 16]
 
-SYNTHETIC_DATASET_NAMES = ["blobs", "anisotropic", "high_dim_sparseish", "imbalanced"]
+SYNTHETIC_SETUPS = [
+    {"n": 10_000, "d": 10, "k": 8},
+    {"n": 30_000, "d": 25, "k": 16},
+]
+
+SYNTHETIC_DATASET_NAMES = ["blobs", "anisotropic", "high_dim_sparseish"]
 REAL_DATASET_NAMES = ["real_iris", "real_covertype", "real_mnist_pca50"]
 
 ENABLE_CHARIKAR_16 = True
@@ -87,7 +89,6 @@ def write_csv(path: str, rows: List[Dict[str, Any]]) -> None:
             w.writerow(r)
 
 
-
 def run_with_measurements(algo: Algo, X: np.ndarray, y: np.ndarray | None, k: int, rng: np.random.Generator):
 
     tracemalloc.start()
@@ -126,6 +127,7 @@ def run_one_dataset_once(X: np.ndarray, y: np.ndarray | None, k: int, seed: int,
 
     # baseline
     kmeans = run_with_measurements(algorithms[0], X, y, k, rng)
+    kmeans.cost_ratio_vs_kmeans = 1.0
     kmeans_cost = kmeans.cost_sse
 
     results = {algorithms[0].name: kmeans}
@@ -158,9 +160,7 @@ def flatten_result(
         "k": k,
         "seed": seed,
         "algorithm": algo_name,
-
         "stream_model": STREAM_MODEL,  
-
         "runtime_sec": safe_float(res.runtime_sec),
         "memory": safe_float(res.memory),
         "cost_sse": safe_float(res.cost_sse),
@@ -180,10 +180,18 @@ def main():
 
     raw_rows: List[Dict[str, Any]] = []
     print("tuning the parameters of the algorithms")
-    algorithms = tuned_algorithms()
 
-    # synthetic
-    for n, d, k in itertools.product(N_VALUES, D_VALUES, K_VALUES):
+    algorithms = tuned_algorithms()
+    print(f"num algorithms = {len(algorithms)}")
+    for algo in algorithms:
+        print(f" - {algo.name}")
+
+    # synthetic 
+    for setup in SYNTHETIC_SETUPS:
+        n = setup["n"]
+        d = setup["d"]
+        k = setup["k"]
+
         rng_gen = set_seed(1234 + 17 * k + 3 * d + (n % 1000))
         datasets = make_synthetic_datasets(rng_gen, n=n, d=d, k_true=k)
 
@@ -195,7 +203,9 @@ def main():
 
         for dataset_name, (X, y) in synthetic_datasets.items():
             for seed in SEEDS:
+                print(f"Running synthetic | dataset={dataset_name} | n={n} d={d} k={k} | seed={seed}")
                 results = run_one_dataset_once(X, y, k=k, seed=seed, algorithms=algorithms)
+
                 for algo_name, res in results.items():
                     raw_rows.append(
                         flatten_result(
@@ -206,9 +216,10 @@ def main():
                             k=k,
                             seed=seed,
                             algo_name=algo_name,
-                            res=res
+                            res=res,
                         )
                     )
+
             print(f"Completed synthetic dataset={dataset_name} for n={n}, d={d}, k={k}")
 
     # real
