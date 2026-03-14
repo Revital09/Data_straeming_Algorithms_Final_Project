@@ -1,8 +1,0 @@
-{
-  "prefix": "guha_chunk_size",
-  "num_runs": 15,
-  "grouped_by": [
-    "chunk_size"
-  ],
-  "x_col": "chunk_size"
-}

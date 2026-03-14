@@ -247,7 +247,7 @@ def experiment_a_approximation_proxy(
         )
 
     df = pd.DataFrame(rows)
-    df.to_csv(os.path.join(output_dir, "experiment_a_approximation_proxy.csv"), index=False)
+    df.to_csv(os.path.join(output_dir, "approximation_proxy.csv"), index=False)
     return df
 
 
@@ -308,7 +308,7 @@ def experiment_c_weighted_summary_validation(
         )
 
     df = pd.DataFrame(rows)
-    df.to_csv(os.path.join(output_dir, "experiment_c_weighted_summary_validation.csv"), index=False)
+    df.to_csv(os.path.join(output_dir, "weighted_summary_validation.csv"), index=False)
     return df
 
 
@@ -330,7 +330,7 @@ def run_all_experiments(
         X=X,
         y=y,
         k=k,
-        output_dir=os.path.join(output_dir, "experiment_A_approximation_proxy"),
+        output_dir=os.path.join(output_dir, "approximation_proxy"),
         beta=beta,
         gamma=gamma,
         chunk_size=chunk_size,
@@ -341,7 +341,7 @@ def run_all_experiments(
         X=X,
         y=y,
         k=k,
-        output_dir=os.path.join(output_dir, "experiment_C_weighted_summary_validation"),
+        output_dir=os.path.join(output_dir, "weighted_summary_validation"),
         beta=beta,
         gamma=gamma,
         chunk_size=chunk_size,

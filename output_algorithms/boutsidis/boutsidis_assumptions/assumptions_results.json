@@ -1,0 +1,42 @@
+{
+  "config": {
+    "n_samples": 10000,
+    "d": 20,
+    "k": 8,
+    "eps": 0.8,
+    "c2": 8.0,
+    "r_min": 2,
+    "r": 20,
+    "n_pairs": 5000,
+    "seeds": [
+      42,
+      77,
+      211
+    ]
+  },
+  "experiment_rademacher": {
+    "mean_positive_fraction": 0.49416666666666664,
+    "std_positive_fraction": 0.0011785113019775802,
+    "mean_negative_fraction": 0.5058333333333334,
+    "std_negative_fraction": 0.001178511301977554,
+    "mean_other_fraction": 0.0,
+    "mean_matrix_mean": -0.0026087466006477675,
+    "std_matrix_mean": 0.0005270467796587104,
+    "mean_matrix_std": 0.22359095017115274,
+    "std_matrix_std": 6.592472361374396e-06,
+    "all_unique_values_ok": true,
+    "target_abs_value": 0.22360679774997896
+  },
+  "experiment_jl": {
+    "mean_ratio": 0.9865210652351379,
+    "std_of_mean_ratio": 0.10364497843394403,
+    "mean_std_ratio": 0.2654758095741272,
+    "mean_min_ratio": 0.27855615814526874,
+    "mean_max_ratio": 2.0540468295415244,
+    "mean_median_ratio": 0.9664831956227621,
+    "mean_within_eps_fraction": 0.9928,
+    "std_within_eps_fraction": 0.006507431649019953,
+    "mean_within_2eps_fraction": 1.0,
+    "std_within_2eps_fraction": 0.0
+  }
+}

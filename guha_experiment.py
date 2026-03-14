@@ -14,10 +14,6 @@ from guha_streaming import Guha_Stream_KMeans
 from utils import extract_quality
 
 
-# ============================================================
-# Helpers
-# ============================================================
-
 def make_synthetic_stream_dataset(
     n: int,
     d: int = 10,
@@ -165,12 +161,10 @@ def save_summary_and_plots(
     return agg
 
 
-# ============================================================
 # Experiment 1: Scalability with stream size
 # Theoretical claim checked:
 # larger streams should increase runtime, while memory grows slowly
 # because STREAM stores summaries rather than the full dataset.
-# ============================================================
 
 def experiment_stream_size(
     output_dir: str,
@@ -216,61 +210,6 @@ def experiment_stream_size(
     return df_all, agg
 
 
-# ============================================================
-# Experiment 2: Effect of chunk size
-# Theoretical claim checked:
-# chunk size affects merge frequency / overhead and can affect runtime,
-# while quality should remain relatively stable.
-# ============================================================
-
-def experiment_chunk_size(
-    output_dir: str,
-    n: int = 50_000,
-    d: int = 10,
-    k_true: int = 8,
-    k_algo: int = 8,
-    chunk_sizes=(512, 1024, 2048, 4096, 8192),
-    m_factor: float = 2.0,
-    seeds=(42, 77, 211),
-):
-    rows = []
-
-    X, y = make_synthetic_stream_dataset(
-        n=n,
-        d=d,
-        k_true=k_true,
-        seed=321,
-    )
-
-    for chunk_size in chunk_sizes:
-        for seed in seeds:
-            row = run_single_guha(
-                X=X,
-                y=y,
-                k=k_algo,
-                seed=seed,
-                chunk_size=chunk_size,
-                m_factor=m_factor,
-            )
-            rows.append(row)
-
-        print(f"Completed chunk-size experiment for chunk_size={chunk_size}")
-
-    df_all = pd.DataFrame(rows)
-    agg = save_summary_and_plots(
-        df_all=df_all,
-        group_cols=["chunk_size"],
-        output_dir=output_dir,
-        prefix="guha_chunk_size",
-        x_col="chunk_size",
-    )
-    return df_all, agg
-
-
-# ============================================================
-# Main
-# ============================================================
-
 def main():
     base_output_dir = "output_algorithms/guha/guha_assumption"
     os.makedirs(base_output_dir, exist_ok=True)
@@ -287,19 +226,8 @@ def main():
         seeds=(42, 77, 211),
     )
 
-    # 2) Check effect of chunk size
-    experiment_chunk_size(
-        output_dir=os.path.join(base_output_dir, "chunk_size"),
-        n=50_000,
-        d=10,
-        k_true=8,
-        k_algo=8,
-        chunk_sizes=(512, 1024, 2048, 4096, 8192),
-        m_factor=2.0,
-        seeds=(42, 77, 211),
-    )
 
-    print("Guha experiments completed.")
+    print("Guha experiment completed.")
 
 
 if __name__ == "__main__":
