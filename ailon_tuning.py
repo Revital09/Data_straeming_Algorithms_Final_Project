@@ -3,7 +3,7 @@ import json
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from ailon_coreset import Ailon_Coreset
+from ailon_streaming import Ailon_Coreset
 from sklearn.datasets import make_blobs
 from utils import extract_quality, pick_best_overall
 

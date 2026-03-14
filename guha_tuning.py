@@ -6,7 +6,7 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from sklearn.datasets import make_blobs
-from guha_stream import Guha_Stream_KMeans
+from guha_streaming import Guha_Stream_KMeans
 from utils import extract_quality, pick_best_overall
 
 

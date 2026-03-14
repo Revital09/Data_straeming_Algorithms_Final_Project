@@ -15,9 +15,9 @@ from data import make_datasets
 
 from kmeans import KMeansAlgo
 from minibatch_kmeans import MiniBatchKMeansAlgo
-from ailon_coreset import Ailon_Coreset
+from ailon_streaming import Ailon_Coreset
 from boutsidis_streaming import Boutsidis_Streaming
-from guha_stream import Guha_Stream_KMeans
+from guha_streaming import Guha_Stream_KMeans
 from charikar_streaming import Charikar_KMeans
 
 

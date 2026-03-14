@@ -3,14 +3,14 @@ import numpy as np
 import pandas as pd
 
 from kmeans import KMeansAlgo
-from guha_stream import Guha_Stream_KMeans
-from ailon_coreset import Ailon_Coreset
+from guha_streaming import Guha_Stream_KMeans
+from ailon_streaming import Ailon_Coreset
 from boutsidis_streaming import Boutsidis_Streaming
 from charikar_streaming import Charikar_KMeans
-from guha_stream_tuned import tune_guha_parameters
-from ailon_tuned import tune_ailon_parameters
-from boutsidis_streaming_tuned import tune_boutsidis_parameters
-from charikar_streaming_tuned import tune_charikar_parameters
+from guha_tuning import tune_guha_parameters
+from ailon_tuning import tune_ailon_parameters
+from boutsidis_tuning import tune_boutsidis_parameters
+from charikar_tuned import tune_charikar_parameters
 from results import Result
 from sklearn.datasets import make_blobs
 
