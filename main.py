@@ -1,4 +1,3 @@
-# main.py
 from __future__ import annotations
 
 import os
@@ -22,52 +21,28 @@ from guha_streaming import Guha_Stream_KMeans
 from charikar_streaming import Charikar_KMeans
 
 
-# ============================================================
-# CONFIG
-# ============================================================
-
 OUTPUT_DIR = "results"
 SWEEP_ID = "Kmeans_sweep"
 
-STREAM_MODEL = "insertion-only"   # ✅ requirement 1
+STREAM_MODEL = "insertion-only"
 
 SEEDS = [42, 77, 211]
 N_VALUES = [10_000, 30_000]
 D_VALUES = [10, 25]
 K_VALUES = [8, 16]
 
-DATASET_NAMES = ["blobs", "anisotropic", "high_dim_sparseish"]
+DATASET_NAMES = [
+    "blobs",
+    "anisotropic",
+    "high_dim_sparseish",
+    "real_iris",
+    "real_covertype",
+    "real_mnist_pca50",
+]
+
 ENABLE_CHARIKAR_16 = True
 
-# ✅ requirement 5: minimal ablation on Boutsidis eps
-BOUTSIDIS_EPS_VALUES = [0.3, 0.5, 0.8]
-
-
-# ============================================================
-# ALGORITHMS
-# ============================================================
-
-def build_algos():
-    """
-    Build algorithms list.
-    eps_boutsidis is swept for ablation.
-    """
-    
-    algos = [
-        KMeansAlgo(max_iter=300),  # baseline
-        MiniBatchKMeansAlgo(batch_size=8192, max_iter=100),
-        Guha_Stream_KMeans(chunk_size=8192, m_factor=2.0),
-        Ailon_Coreset(chunk_size=8192),
-        Boutsidis_Streaming(eps=1.5, c2=8.0, chunk_size=1024),
-    ]
-    if ENABLE_CHARIKAR_16:
-        algos.append(Charikar_KMeans(beta=25, gamma=100.0, chunk_size=8192))
-    return algos
-
-
-# ============================================================
 # HELPERS
-# ============================================================
 
 def ensure_dir(path: str) -> None:
     os.makedirs(path, exist_ok=True)
@@ -125,15 +100,9 @@ def write_csv(path: str, rows: List[Dict[str, Any]]) -> None:
             w.writerow(r)
 
 
-# ============================================================
-# NEW: measurement wrapper (peak memory + enrich streaming metrics)
-# ============================================================
 
 def run_with_measurements(algo: Algo, X: np.ndarray, y: np.ndarray | None, k: int, rng: np.random.Generator):
-    """
-    ✅ requirement 2: peak python memory via tracemalloc
-    ✅ requirement 3: ensure throughput exists
-    """
+
     tracemalloc.start()
     try:
         res = algo.fit(X, k, rng, y)
@@ -164,10 +133,7 @@ def run_with_measurements(algo: Algo, X: np.ndarray, y: np.ndarray | None, k: in
     return res
 
 
-# ============================================================
 # EXPERIMENT CORE
-# ============================================================
-
 def run_one_dataset_once(X: np.ndarray, y: np.ndarray | None, k: int, seed: int, algorithms: Algo) -> Dict[str, Any]:
     rng = set_seed(seed)
 
@@ -206,7 +172,7 @@ def flatten_result(
         "seed": seed,
         "algorithm": algo_name,
 
-        "stream_model": STREAM_MODEL,   # ✅ requirement 1
+        "stream_model": STREAM_MODEL,  
 
         "runtime_sec": safe_float(res.runtime_sec),
         "memory": safe_float(res.memory),
@@ -251,7 +217,6 @@ def main():
                     )
             print(f"Completed dataset={dataset_name} for n={n}, d={d}, k={k}")
 
-    # Write raw only (minimal). If you want agg/summary again, keep your old funcs.
     raw_rows_out = truncate_numeric_in_rows(raw_rows, decimals=5)
     raw_csv = os.path.join(OUTPUT_DIR, f"{SWEEP_ID}_raw.csv")
     write_csv(raw_csv, raw_rows_out)
