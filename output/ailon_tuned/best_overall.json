@@ -1,0 +1,27 @@
+[
+  {
+    "chunk_size": 1024,
+    "coreset_factor": 1.0,
+    "repeat_factor": 1.0,
+    "runtime_sec_mean": 0.896949633412684,
+    "runtime_sec_std": 0.06076381856267537,
+    "memory_mean": 21090.666666666668,
+    "memory_std": 50.806823688686805,
+    "cost_sse_mean": 53447.023134102725,
+    "cost_sse_std": 5752.443014726966,
+    "quality_mean": 0.7526906440277029,
+    "quality_std": 0.028178443026182203,
+    "summary_size_mean": 239.66666666666666,
+    "summary_size_std": 0.5773502691896278,
+    "avg_update_ms_mean": 89.66727002213399,
+    "avg_update_ms_std": 6.077904343269348,
+    "coreset_per_round_mean": 3.0,
+    "repetitions_mean": 10.0,
+    "ari_mean": 0.6010609539212809,
+    "nmi_mean": 0.7526906440277029,
+    "quality_norm": 0.9545714202985658,
+    "runtime_norm": 0.08238965968067209,
+    "memory_norm": 0.0,
+    "tradeoff_score": 0.45668829522911486
+  }
+]

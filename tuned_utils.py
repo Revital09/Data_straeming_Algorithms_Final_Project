@@ -46,7 +46,7 @@ def tuned_algorithms():
     )
     algos.append(Ailon_Coreset(chunk_size=8192,coreset_factor=ailon_df.iloc[0]["coreset_factor"],
                                 repeat_factor=ailon_df.iloc[0]["repeat_factor"]))
-    print(ailon_df.iloc[0]["coreset_factor"], ailon_df.iloc[0]["repeat_factor"])
+    print(f"The best parameters for Ailon are: coreset_factor={ailon_df.iloc[0]['coreset_factor']}, repeat_factor={ailon_df.iloc[0]['repeat_factor']}")
     boutsidis_df = tune_boutsidis_parameters(
         samples=X,
         k=8,
@@ -60,7 +60,7 @@ def tuned_algorithms():
         runtime_weight=0.25,
         memory_weight=0.25,
     )
-    print(boutsidis_df.iloc[0]["eps"], boutsidis_df.iloc[0]["c2"])
+    print(f"The best parameters for Boutsidis are: eps={boutsidis_df.iloc[0]['eps']}, c2={boutsidis_df.iloc[0]['c2']}")
     algos.append(Boutsidis_Streaming(eps=boutsidis_df.iloc[0]["eps"], c2=boutsidis_df.iloc[0]["c2"], chunk_size=8192))
 
     guha_df = tune_guha_parameters(
@@ -75,7 +75,7 @@ def tuned_algorithms():
         runtime_weight=0.25,
         memory_weight=0.25,
     )
-    print(guha_df.iloc[0]["m_factor"])
+    print(f"The best parameter for Guha is: m_factor={guha_df.iloc[0]['m_factor']}")
     algos.append(Guha_Stream_KMeans(chunk_size=8192, m_factor=guha_df.iloc[0]["m_factor"]))
 
     charikar_df = tune_charikar_parameters(
@@ -91,7 +91,7 @@ def tuned_algorithms():
         runtime_weight=0.25,
         memory_weight=0.25,
     )
-    print(charikar_df.iloc[0]["beta"], charikar_df.iloc[0]["gamma"])
+    print(f"The best parameters for Charikar are: beta={charikar_df.iloc[0]['beta']}, gamma={charikar_df.iloc[0]['gamma']}")
     algos.append(Charikar_KMeans(beta=charikar_df.iloc[0]["beta"], gamma=charikar_df.iloc[0]["gamma"], chunk_size=8192))
     return algos
 
