@@ -182,7 +182,7 @@ def main():
         output_dir="output/charikar_blobs",
         labels=y,
         chunk_size=4092,
-        beta_values = (0.5, 1.5, 3),
+        beta_values = (1.5, 3, 5),
         gamma_values = (0.25, 0.5, 1),
         seeds=(42, 77, 211),
         quality_weight=0.5,
