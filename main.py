@@ -9,6 +9,7 @@ from typing import Dict, List, Tuple, Any
 
 import numpy as np
 
+from results import Algo
 from tuned_utils import tuned_algorithms
 from utils import set_seed
 from data_new import make_datasets
@@ -128,7 +129,7 @@ def write_csv(path: str, rows: List[Dict[str, Any]]) -> None:
 # NEW: measurement wrapper (peak memory + enrich streaming metrics)
 # ============================================================
 
-def run_with_measurements(algo, X: np.ndarray, y: np.ndarray | None, k: int, rng: np.random.Generator):
+def run_with_measurements(algo: Algo, X: np.ndarray, y: np.ndarray | None, k: int, rng: np.random.Generator):
     """
     ✅ requirement 2: peak python memory via tracemalloc
     ✅ requirement 3: ensure throughput exists
@@ -167,7 +168,7 @@ def run_with_measurements(algo, X: np.ndarray, y: np.ndarray | None, k: int, rng
 # EXPERIMENT CORE
 # ============================================================
 
-def run_one_dataset_once(X: np.ndarray, y: np.ndarray | None, k: int, seed: int, algorithms) -> Dict[str, Any]:
+def run_one_dataset_once(X: np.ndarray, y: np.ndarray | None, k: int, seed: int, algorithms: Algo) -> Dict[str, Any]:
     rng = set_seed(seed)
 
     # baseline

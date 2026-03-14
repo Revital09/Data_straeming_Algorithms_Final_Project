@@ -26,5 +26,14 @@ class KMeansAlgo(Algo):
         labels = assign_labels(X, centers)
         ari = adjusted_rand_score(y, labels) if y is not None else None
         nmi = normalized_mutual_info_score(y, labels) if y is not None else None
+        state_bytes = int(X.nbytes + centers.nbytes + km.labels_.nbytes)
 
-        return Result(centers=centers, runtime_sec=t1 - t0, cost_sse=cost, cost_ratio_vs_kmeans=1.0, ari=ari, nmi=nmi)
+        return Result(
+            centers=centers,
+            runtime_sec=t1 - t0,
+            memory=float(state_bytes),
+            cost_sse=cost,
+            cost_ratio_vs_kmeans=1.0,
+            ari=ari,
+            nmi=nmi,
+        )

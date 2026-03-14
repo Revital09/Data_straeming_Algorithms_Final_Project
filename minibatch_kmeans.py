@@ -21,7 +21,6 @@ class MiniBatchKMeansAlgo(Algo):
             batch_size=self.batch_size,
             random_state=int(rng.integers(1, 1_000_000)),
             max_iter=self.max_iter,
-            n_init="auto"
         )
         mbk.fit(X)
         t1 = time.perf_counter()
@@ -32,5 +31,14 @@ class MiniBatchKMeansAlgo(Algo):
 
         ari = adjusted_rand_score(y, labels) if y is not None else None
         nmi = normalized_mutual_info_score(y, labels) if y is not None else None
+        state_bytes = int(X.nbytes + centers.nbytes + mbk.labels_.nbytes)
 
-        return Result(centers=centers, runtime_sec=t1 - t0, cost_sse=cost, cost_ratio_vs_kmeans=float("nan"), ari=ari, nmi=nmi)
+        return Result(
+            centers=centers,
+            runtime_sec=t1 - t0,
+            memory=float(state_bytes),
+            cost_sse=cost,
+            cost_ratio_vs_kmeans=float("nan"),
+            ari=ari,
+            nmi=nmi,
+        )
