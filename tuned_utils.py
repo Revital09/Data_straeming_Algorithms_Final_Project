@@ -29,14 +29,13 @@ def tuned_algorithms():
     A = np.array([[0.6, -0.8], [0.4, 0.9]])
     X = X @ A
     rng = np.random.default_rng(123)
-    if d > 2:
-        X = np.hstack([X, rng.normal(0, 0.1, size=(n, d - 2))])
+    X = np.hstack([X, rng.normal(0, 0.1, size=(n, d - 2))])
 
     algos = [KMeansAlgo(max_iter=300)]
     ailon_df = tune_ailon_parameters(
         samples=X,
         k=8,
-        output_dir="output/ailon_blobs",
+        output_dir="output/ailon_tuned",
         labels=y,
         coreset_factors=(1.0, 1.5, 2.0),
         repeat_factors=(0.75, 1.0, 1.5),
@@ -52,7 +51,7 @@ def tuned_algorithms():
         samples=X,
         k=8,
         r_min=2,
-        output_dir="output/boutsidis_blobs",
+        output_dir="output/boutsidis_tuned",
         labels=y,
         eps_values = (1.5, 2.5, 3.5),
         c2_values = (1.0, 2.0, 3.0),
@@ -67,7 +66,7 @@ def tuned_algorithms():
     guha_df = tune_guha_parameters(
         samples=X,
         k=14,
-        output_dir="output/guha_blobs",
+        output_dir="output/guha_tuned",
         labels=y,
         chunk_size=4096,
         m_factor_values=(1.0, 2.0, 3.0, 4.0, 5.0),
@@ -82,11 +81,11 @@ def tuned_algorithms():
     charikar_df = tune_charikar_parameters(
         samples=X,
         k=8,
-        output_dir="output/charikar_blobs",
+        output_dir="output/charikar_tuned",
         labels=y,
         chunk_size=4092,
-        beta_values=(3.0, 5.0, 25.0),
-        gamma_values=(10.0, 30.0, 100.0),
+        beta_values = (0.5, 1.5, 3),
+        gamma_values = (0.25, 0.5, 1),
         seeds=(42, 77, 211),
         quality_weight=0.5,
         runtime_weight=0.25,

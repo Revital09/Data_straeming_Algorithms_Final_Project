@@ -173,8 +173,7 @@ def main():
     A = np.array([[0.6, -0.8], [0.4, 0.9]])
     X = X @ A
     rng = np.random.default_rng(123)
-    if d > 2:
-        X = np.hstack([X, rng.normal(0, 0.1, size=(n, d - 2))])
+    X = np.hstack([X, rng.normal(0, 0.1, size=(n, d - 2))])
 
 
     best_df = tune_charikar_parameters(
@@ -183,8 +182,8 @@ def main():
         output_dir="output/charikar_blobs",
         labels=y,
         chunk_size=4092,
-        beta_values=(3.0, 5.0, 25.0),
-        gamma_values=(10.0, 30.0, 100.0),
+        beta_values = (0.5, 1.5, 3),
+        gamma_values = (0.25, 0.5, 1),
         seeds=(42, 77, 211),
         quality_weight=0.5,
         runtime_weight=0.25,
