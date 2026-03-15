@@ -3,8 +3,8 @@
     "chunk_size": 1024,
     "eps": 2.5,
     "c2": 2.0,
-    "runtime_sec_mean": 0.10029789999437828,
-    "runtime_sec_std": 0.01936595300864553,
+    "runtime_sec_mean": 0.019763733328242477,
+    "runtime_sec_std": 0.007667029463747239,
     "memory_mean": 1016.0,
     "memory_std": 0.0,
     "cost_sse_mean": 35524.066797587955,
@@ -13,14 +13,14 @@
     "quality_std": 0.009910815485322976,
     "r_mean": 3.0,
     "r_std": 0.0,
-    "avg_update_ms_mean": 8.00179333309643,
-    "avg_update_ms_std": 0.9444947288164935,
+    "avg_update_ms_mean": 1.64249999797903,
+    "avg_update_ms_std": 0.6906654280881228,
     "points_seen_mean": 10000.0,
     "ari_mean": 0.620436533729634,
     "nmi_mean": 0.7597593121300313,
     "quality_norm": 1.0,
-    "runtime_norm": 0.07405535653208173,
+    "runtime_norm": 0.08077955431327428,
     "memory_norm": 0.125,
-    "tradeoff_score": 0.4502361608669796
+    "tradeoff_score": 0.4485551114216814
   }
 ]

@@ -1,14 +1,63 @@
 from __future__ import annotations
 
+import os
 import math
 import time
 
 import numpy as np
 
-from sklearn.cluster import KMeans
+os.environ.setdefault("LOKY_MAX_CPU_COUNT", "1")
+
 from sklearn.metrics import adjusted_rand_score, normalized_mutual_info_score
 
 from results import Algo, Result
+
+
+def _squared_norms(X: np.ndarray) -> np.ndarray:
+    return np.einsum("ij,ij->i", X, X, optimize=True)
+
+
+def _squared_distances(
+    X: np.ndarray,
+    X_sq_norms: np.ndarray,
+    centers: np.ndarray,
+) -> np.ndarray:
+    center_sq_norms = np.einsum("ij,ij->i", centers, centers, optimize=True)
+    dist2 = X_sq_norms[:, None] + center_sq_norms[None, :]
+    dist2 -= 2.0 * (X @ centers.T)
+    np.maximum(dist2, 0.0, out=dist2)
+    return dist2
+
+
+def _weighted_kmeanspp_init(
+    X: np.ndarray,
+    w: np.ndarray,
+    k: int,
+    rng: np.random.Generator,
+) -> np.ndarray:
+    n = X.shape[0]
+    centers = np.empty((k, X.shape[1]), dtype=np.float64)
+
+    probs0 = w / max(float(np.sum(w)), 1e-12)
+    first_idx = int(rng.choice(n, p=probs0))
+    centers[0] = X[first_idx]
+
+    X_sq_norms = _squared_norms(X)
+    min_dist2 = _squared_distances(X, X_sq_norms, centers[:1])[:, 0]
+
+    for i in range(1, k):
+        scores = w * min_dist2
+        total = float(np.sum(scores))
+        if total <= 1e-12:
+            idx = int(rng.integers(0, n))
+        else:
+            idx = int(rng.choice(n, p=scores / total))
+        centers[i] = X[idx]
+
+        new_dist2 = _squared_distances(X, X_sq_norms, centers[i : i + 1])[:, 0]
+        np.minimum(min_dist2, new_dist2, out=min_dist2)
+
+    return centers
 
 
 def _weighted_kmeans_centers(
@@ -19,14 +68,53 @@ def _weighted_kmeans_centers(
     n_init: int = 5,
     max_iter: int = 300,
 ) -> np.ndarray:
-    km = KMeans(
-        n_clusters=k,
-        n_init=n_init,
-        max_iter=max_iter,
-        random_state=int(rng.integers(1, 1_000_000)),
-    )
-    km.fit(X, sample_weight=w)
-    return km.cluster_centers_
+    X = np.asarray(X, dtype=np.float64)
+    w = np.asarray(w, dtype=np.float64)
+
+    if X.shape[0] < k:
+        raise ValueError("Need at least k weighted points.")
+
+    X_sq_norms = _squared_norms(X)
+    best_centers: np.ndarray | None = None
+    best_cost = float("inf")
+    tol = 1e-6
+
+    for _ in range(max(1, n_init)):
+        centers = _weighted_kmeanspp_init(X, w, k, rng)
+
+        for _ in range(max(1, max_iter)):
+            dist2 = _squared_distances(X, X_sq_norms, centers)
+            labels = np.argmin(dist2, axis=1)
+
+            new_centers = centers.copy()
+            for j in range(k):
+                mask = labels == j
+                if not np.any(mask):
+                    refill_idx = int(np.argmax(w * np.min(dist2, axis=1)))
+                    new_centers[j] = X[refill_idx]
+                    continue
+
+                cluster_w = w[mask]
+                total_w = float(np.sum(cluster_w))
+                if total_w <= 1e-12:
+                    refill_idx = int(np.argmax(w * np.min(dist2, axis=1)))
+                    new_centers[j] = X[refill_idx]
+                else:
+                    new_centers[j] = (X[mask] * cluster_w[:, None]).sum(axis=0) / total_w
+
+            shift = np.max(np.sum((new_centers - centers) ** 2, axis=1))
+            centers = new_centers
+            if shift <= tol:
+                break
+
+        final_dist2 = _squared_distances(X, X_sq_norms, centers)
+        cost = float(np.dot(w, np.min(final_dist2, axis=1)))
+        if cost < best_cost:
+            best_cost = cost
+            best_centers = centers.copy()
+
+    assert best_centers is not None
+    return best_centers
 
 
 class _OnlineFLKMeansState:
@@ -146,13 +234,14 @@ class _OnlineFLKMeansState:
         self._undo_index = -1
         self._undo_prev_count = 0.0
 
-    def snapshot(self) -> tuple[np.ndarray, np.ndarray]:
+    def snapshot(self, copy_arrays: bool = False) -> tuple[np.ndarray, np.ndarray]:
         if self.num_opened == 0:
             raise RuntimeError("Invocation has no centers.")
-        return (
-            self.centers[:self.num_opened].copy(),
-            self.counts[:self.num_opened].copy(),
-        )
+        centers = self.centers[:self.num_opened]
+        counts = self.counts[:self.num_opened]
+        if copy_arrays:
+            return centers.copy(), counts.copy()
+        return centers, counts
 
 
 class Charikar_KMeans(Algo):
@@ -165,16 +254,24 @@ class Charikar_KMeans(Algo):
         chunk_size: int = 1000,
         n_init_final: int = 5,
         max_iter_final: int = 300,
+        progress_lb_n_init: int = 1,
+        progress_lb_max_iter: int = 50,
+        progress_lb_approx_factor: float = 2.0,
+        max_stalled_phases: int = 8,
     ):
         self.beta = float(beta)
         self.gamma = float(gamma)
         self.chunk_size = int(chunk_size)
         self.n_init_final = int(n_init_final)
         self.max_iter_final = int(max_iter_final)
+        self.progress_lb_n_init = int(progress_lb_n_init)
+        self.progress_lb_max_iter = int(progress_lb_max_iter)
+        self.progress_lb_approx_factor = float(progress_lb_approx_factor)
+        self.max_stalled_phases = int(max_stalled_phases)
 
     @staticmethod
     def _squared_norms(X: np.ndarray) -> np.ndarray:
-        return np.einsum("ij,ij->i", X, X, optimize=True)
+        return _squared_norms(X)
 
     @staticmethod
     def _squared_distances(
@@ -182,11 +279,7 @@ class Charikar_KMeans(Algo):
         X_sq_norms: np.ndarray,
         centers: np.ndarray,
     ) -> np.ndarray:
-        center_sq_norms = np.einsum("ij,ij->i", centers, centers, optimize=True)
-        dist2 = X_sq_norms[:, None] + center_sq_norms[None, :]
-        dist2 -= 2.0 * (X @ centers.T)
-        np.maximum(dist2, 0.0, out=dist2)
-        return dist2
+        return _squared_distances(X, X_sq_norms, centers)
 
     def _assign_and_cost(self, X: np.ndarray, centers: np.ndarray) -> tuple[np.ndarray, float]:
         X_sq_norms = self._squared_norms(X)
@@ -194,6 +287,47 @@ class Charikar_KMeans(Algo):
         pred = np.argmin(dist2, axis=1)
         cost = float(np.sum(dist2[np.arange(X.shape[0]), pred]))
         return pred, cost
+
+    def _weighted_cost_to_centers(
+        self,
+        X: np.ndarray,
+        w: np.ndarray,
+        centers: np.ndarray,
+    ) -> float:
+        X_sq_norms = self._squared_norms(X)
+        dist2 = self._squared_distances(X, X_sq_norms, centers)
+        min_dist2 = np.min(dist2, axis=1)
+        return float(np.dot(w, min_dist2))
+
+    def _phase_progress_lower_bound(
+        self,
+        summary_X: np.ndarray,
+        summary_w: np.ndarray,
+        next_x: np.ndarray,
+        k: int,
+        rng: np.random.Generator,
+    ) -> float:
+        if summary_X.shape[0] == 0:
+            return 0.0
+
+        X_aug = np.vstack([summary_X, next_x[None, :]])
+        w_aug = np.hstack([summary_w, np.array([1.0], dtype=np.float64)])
+
+        if X_aug.shape[0] <= k:
+            approx_cost = 0.0
+        else:
+            centers = _weighted_kmeans_centers(
+                X_aug,
+                w_aug,
+                k=k,
+                rng=rng,
+                n_init=self.progress_lb_n_init,
+                max_iter=self.progress_lb_max_iter,
+            )
+            approx_cost = self._weighted_cost_to_centers(X_aug, w_aug, centers)
+
+        denom = 2.0 * self.progress_lb_approx_factor * (1.0 + self.gamma)
+        return float(approx_cost / max(denom, 1e-12))
 
     def _set_lb_kmeans(self, X: np.ndarray, k: int) -> float:
         m = min(X.shape[0], k + 1)
@@ -239,18 +373,19 @@ class Charikar_KMeans(Algo):
         active_states: list[_OnlineFLKMeansState],
         active_rngs: list[np.random.Generator],
         points: np.ndarray,
-        weights: np.ndarray,
+        weights: np.ndarray | None,
         is_raw: bool,
         median_limit: int,
         cost_limit: float,
     ) -> tuple[list[_OnlineFLKMeansState], list[np.random.Generator]]:
+        point_sq_norms = self._squared_norms(points)
         for i in range(points.shape[0]):
             if not active_states:
                 break
 
             x = points[i]
-            x_norm2 = float(np.dot(x, x))
-            w = float(weights[i])
+            x_norm2 = float(point_sq_norms[i])
+            w = 1.0 if weights is None else float(weights[i])
 
             next_states: list[_OnlineFLKMeansState] = []
             next_rngs: list[np.random.Generator] = []
@@ -309,13 +444,12 @@ class Charikar_KMeans(Algo):
         for start in range(raw_start_idx, n, self.chunk_size):
             stop = min(start + self.chunk_size, n)
             chunk = X[start:stop]
-            chunk_w = np.ones(chunk.shape[0], dtype=np.float64)
 
             active_states, active_rngs = self._feed_points_to_states(
                 active_states=active_states,
                 active_rngs=active_rngs,
                 points=chunk,
-                weights=chunk_w,
+                weights=None,
                 is_raw=True,
                 median_limit=median_limit,
                 cost_limit=cost_limit,
@@ -327,8 +461,16 @@ class Charikar_KMeans(Algo):
         for st in active_states:
             st.stop_reason = "end_of_stream"
 
-        winner = max(states, key=lambda s: s.processed_items)
-        Mi_X, Mi_w = winner.snapshot()
+        winner = max(
+            states,
+            key=lambda s: (
+                s.raw_points_read,
+                s.processed_items,
+                -s.num_opened,
+                -s.total_cost,
+            ),
+        )
+        Mi_X, Mi_w = winner.snapshot(copy_arrays=False)
 
         stats = {
             "facility_cost": float(facility_cost),
@@ -362,6 +504,7 @@ class Charikar_KMeans(Algo):
         summary_X: np.ndarray | None = None
         summary_w: np.ndarray | None = None
         phase_summaries: list[dict] = []
+        stalled_phases = 0
 
         while raw_start_idx < n:
             summary_in_size = 0 if summary_X is None else int(summary_X.shape[0])
@@ -392,22 +535,37 @@ class Charikar_KMeans(Algo):
             summary_X = Mi_X
             summary_w = Mi_w
 
+            next_raw_start = raw_start_idx + raw_consumed
             if raw_consumed <= 0:
+                stalled_phases += 1
+            else:
+                stalled_phases = 0
+                raw_start_idx = next_raw_start
+
+            if raw_start_idx < n and summary_X is not None and summary_w is not None:
+                progress_lb = self._phase_progress_lower_bound(
+                    summary_X=summary_X,
+                    summary_w=summary_w,
+                    next_x=X[raw_start_idx],
+                    k=k,
+                    rng=rng,
+                )
+                L = max(self.beta * L, progress_lb)
+            else:
+                L *= self.beta
+
+            if stalled_phases >= self.max_stalled_phases:
                 x = X[raw_start_idx:raw_start_idx + 1]
                 w = np.array([1.0], dtype=np.float64)
-
                 if summary_X is None:
                     summary_X = x.copy()
                     summary_w = w
                 else:
                     summary_X = np.vstack([summary_X, x])
                     summary_w = np.hstack([summary_w, w])
-
                 raw_start_idx += 1
-            else:
-                raw_start_idx += raw_consumed
+                stalled_phases = 0
 
-            L *= self.beta
             phase_id += 1
 
         assert summary_X is not None and summary_w is not None
