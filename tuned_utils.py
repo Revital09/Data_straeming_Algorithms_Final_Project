@@ -3,10 +3,10 @@ import numpy as np
 import pandas as pd
 
 from kmeans import KMeansAlgo
-from guha_streaming_new import Guha_Stream_KMeans
-from ailon_streaming_new import Ailon_Coreset
-from boutsidis_streaming_new import Boutsidis_Streaming
-from charikar_streaming_new import Charikar_KMeans
+from guha_streaming import Guha_Stream_KMeans
+from ailon_streaming import Ailon_Coreset
+from boutsidis_streaming import Boutsidis_Streaming
+from charikar_streaming import Charikar_KMeans
 from guha_tuning import tune_guha_parameters
 from ailon_tuning import tune_ailon_parameters
 from boutsidis_tuning import tune_boutsidis_parameters

@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 from sklearn.datasets import make_blobs
 
-from boutsidis_streaming_new import Boutsidis_Streaming
+from boutsidis_streaming import Boutsidis_Streaming
 from utils import extract_quality, pick_best_overall
 
 matplotlib.use("Agg")

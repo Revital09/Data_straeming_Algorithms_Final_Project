@@ -11,7 +11,7 @@ from sklearn.cluster import KMeans
 from sklearn.datasets import make_blobs
 from sklearn.metrics import adjusted_rand_score, normalized_mutual_info_score
 
-from charikar_streaming_new import Charikar_KMeans, _weighted_kmeans_centers
+from charikar_streaming import Charikar_KMeans, _weighted_kmeans_centers
 from utils import assign_labels, kmeans_cost_sse
 
 

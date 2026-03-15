@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 from sklearn.datasets import make_blobs
 
-from charikar_streaming_new import Charikar_KMeans
+from charikar_streaming import Charikar_KMeans
 from utils import extract_quality, pick_best_overall
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt

@@ -12,7 +12,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from sklearn.datasets import make_blobs
 
-from boutsidis_streaming_new import (
+from boutsidis_streaming import (
     _rademacher_projection_matrix,
     Boutsidis_Streaming,
 )

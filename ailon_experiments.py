@@ -3,7 +3,7 @@ import os
 import numpy as np
 from sklearn.datasets import make_blobs
 
-from ailon_streaming_new import Ailon_Coreset
+from ailon_streaming import Ailon_Coreset
 
 
 def run_flat(algo, X, k, rng, labels=None):
