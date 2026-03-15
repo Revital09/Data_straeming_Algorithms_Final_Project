@@ -8,6 +8,7 @@ import numpy as np
 
 os.environ.setdefault("LOKY_MAX_CPU_COUNT", "1")
 
+from sklearn.cluster import KMeans
 from sklearn.metrics import adjusted_rand_score, normalized_mutual_info_score
 
 from results import Algo, Result
@@ -29,37 +30,6 @@ def _squared_distances(
     return dist2
 
 
-def _weighted_kmeanspp_init(
-    X: np.ndarray,
-    w: np.ndarray,
-    k: int,
-    rng: np.random.Generator,
-) -> np.ndarray:
-    n = X.shape[0]
-    centers = np.empty((k, X.shape[1]), dtype=np.float64)
-
-    probs0 = w / max(float(np.sum(w)), 1e-12)
-    first_idx = int(rng.choice(n, p=probs0))
-    centers[0] = X[first_idx]
-
-    X_sq_norms = _squared_norms(X)
-    min_dist2 = _squared_distances(X, X_sq_norms, centers[:1])[:, 0]
-
-    for i in range(1, k):
-        scores = w * min_dist2
-        total = float(np.sum(scores))
-        if total <= 1e-12:
-            idx = int(rng.integers(0, n))
-        else:
-            idx = int(rng.choice(n, p=scores / total))
-        centers[i] = X[idx]
-
-        new_dist2 = _squared_distances(X, X_sq_norms, centers[i : i + 1])[:, 0]
-        np.minimum(min_dist2, new_dist2, out=min_dist2)
-
-    return centers
-
-
 def _weighted_kmeans_centers(
     X: np.ndarray,
     w: np.ndarray,
@@ -68,53 +38,14 @@ def _weighted_kmeans_centers(
     n_init: int = 5,
     max_iter: int = 300,
 ) -> np.ndarray:
-    X = np.asarray(X, dtype=np.float64)
-    w = np.asarray(w, dtype=np.float64)
-
-    if X.shape[0] < k:
-        raise ValueError("Need at least k weighted points.")
-
-    X_sq_norms = _squared_norms(X)
-    best_centers: np.ndarray | None = None
-    best_cost = float("inf")
-    tol = 1e-6
-
-    for _ in range(max(1, n_init)):
-        centers = _weighted_kmeanspp_init(X, w, k, rng)
-
-        for _ in range(max(1, max_iter)):
-            dist2 = _squared_distances(X, X_sq_norms, centers)
-            labels = np.argmin(dist2, axis=1)
-
-            new_centers = centers.copy()
-            for j in range(k):
-                mask = labels == j
-                if not np.any(mask):
-                    refill_idx = int(np.argmax(w * np.min(dist2, axis=1)))
-                    new_centers[j] = X[refill_idx]
-                    continue
-
-                cluster_w = w[mask]
-                total_w = float(np.sum(cluster_w))
-                if total_w <= 1e-12:
-                    refill_idx = int(np.argmax(w * np.min(dist2, axis=1)))
-                    new_centers[j] = X[refill_idx]
-                else:
-                    new_centers[j] = (X[mask] * cluster_w[:, None]).sum(axis=0) / total_w
-
-            shift = np.max(np.sum((new_centers - centers) ** 2, axis=1))
-            centers = new_centers
-            if shift <= tol:
-                break
-
-        final_dist2 = _squared_distances(X, X_sq_norms, centers)
-        cost = float(np.dot(w, np.min(final_dist2, axis=1)))
-        if cost < best_cost:
-            best_cost = cost
-            best_centers = centers.copy()
-
-    assert best_centers is not None
-    return best_centers
+    km = KMeans(
+        n_clusters=k,
+        n_init=n_init,
+        max_iter=max_iter,
+        random_state=int(rng.integers(1, 1_000_000)),
+    )
+    km.fit(X, sample_weight=w)
+    return km.cluster_centers_
 
 
 class _OnlineFLKMeansState:
@@ -124,6 +55,7 @@ class _OnlineFLKMeansState:
         "max_centers",
         "centers",
         "center_sq_norms",
+        "dist_buffer",
         "counts",
         "total_cost",
         "num_opened",
@@ -146,6 +78,7 @@ class _OnlineFLKMeansState:
 
         self.centers = np.zeros((max_centers, d), dtype=np.float64)
         self.center_sq_norms = np.zeros(max_centers, dtype=np.float64)
+        self.dist_buffer = np.zeros(max_centers, dtype=np.float64)
         self.counts = np.zeros(max_centers, dtype=np.float64)
 
         self.total_cost = 0.0
@@ -190,10 +123,14 @@ class _OnlineFLKMeansState:
             self._undo_index = 0
         else:
             active_centers = self.centers[:num_opened]
-            sq_dists = self.center_sq_norms[:num_opened] + x_norm2 - 2.0 * (active_centers @ x)
+            sq_dists = self.dist_buffer[:num_opened]
+            np.dot(active_centers, x, out=sq_dists)
+            sq_dists *= -2.0
+            sq_dists += self.center_sq_norms[:num_opened]
+            sq_dists += x_norm2
             np.maximum(sq_dists, 0.0, out=sq_dists)
 
-            j = int(np.argmin(sq_dists))
+            j = int(sq_dists.argmin())
             d2 = float(sq_dists[j])
             p_open = (w * d2) / (self.facility_cost + 1e-12)
 
@@ -284,7 +221,7 @@ class Charikar_KMeans(Algo):
     def _assign_and_cost(self, X: np.ndarray, centers: np.ndarray) -> tuple[np.ndarray, float]:
         X_sq_norms = self._squared_norms(X)
         dist2 = self._squared_distances(X, X_sq_norms, centers)
-        pred = np.argmin(dist2, axis=1)
+        pred = dist2.argmin(axis=1)
         cost = float(np.sum(dist2[np.arange(X.shape[0]), pred]))
         return pred, cost
 
