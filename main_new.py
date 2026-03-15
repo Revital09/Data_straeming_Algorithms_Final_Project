@@ -248,7 +248,7 @@ def main():
                         res=res
                     )
                 )
-        print(f"Completed real dataset={dataset_name} with true n={n_real}, d={d_real}, k={k_real}")
+        print(f"\nCompleted real dataset={dataset_name} with true n={n_real}, d={d_real}, k={k_real}")
 
     raw_rows_out = truncate_numeric_in_rows(raw_rows, decimals=5)
     raw_csv = os.path.join(OUTPUT_DIR, f"{SWEEP_ID}_raw.csv")

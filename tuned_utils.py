@@ -83,21 +83,21 @@ def tuned_algorithms(
     print(f"The best parameter for Guha is: m_factor={guha_df.iloc[0]['m_factor']}")
     algos.append(Guha_Stream_KMeans(chunk_size=8192, m_factor=guha_df.iloc[0]["m_factor"]))
 
-    charikar_df = tune_charikar_parameters(
-        samples=X,
-        k=8,
-        output_dir="output/charikar_tuned",
-        labels=y,
-        chunk_size=4092,
-        beta_values = (1.5, 3, 5),
-        gamma_values = (0.25, 0.5, 1),
-        seeds=seeds,
-        quality_weight=quality_weight,
-        runtime_weight=runtime_weight,
-        memory_weight=memory_weight,
-    )
-    print(f"The best parameters for Charikar are: beta={charikar_df.iloc[0]['beta']}, gamma={charikar_df.iloc[0]['gamma']}")
-    algos.append(Charikar_KMeans(beta=charikar_df.iloc[0]["beta"], gamma=charikar_df.iloc[0]["gamma"], chunk_size=8192))
+    # charikar_df = tune_charikar_parameters(
+    #     samples=X,
+    #     k=8,
+    #     output_dir="output/charikar_tuned",
+    #     labels=y,
+    #     chunk_size=4092,
+    #     beta_values = (1.5, 3, 5),
+    #     gamma_values = (0.25, 0.5, 1),
+    #     seeds=seeds,
+    #     quality_weight=quality_weight,
+    #     runtime_weight=runtime_weight,
+    #     memory_weight=memory_weight,
+    # )
+    # print(f"The best parameters for Charikar are: beta={charikar_df.iloc[0]['beta']}, gamma={charikar_df.iloc[0]['gamma']}")
+    # algos.append(Charikar_KMeans(beta=charikar_df.iloc[0]["beta"], gamma=charikar_df.iloc[0]["gamma"], chunk_size=8192))
     return algos
 
 if __name__ == "__main__":
