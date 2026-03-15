@@ -375,7 +375,10 @@ def main():
     raw_rows: List[Dict[str, Any]] = []
     print("tuning the parameters of the algorithms")
 
-    algorithms = tuned_algorithms()
+    algorithms = tuned_algorithms(seeds=SEEDS, quality_weight=TRADEOFF_QUALITY_WEIGHT, 
+                                  runtime_weight=TRADEOFF_RUNTIME_WEIGHT, 
+                                  memory_weight=TRADEOFF_MEMORY_WEIGHT, 
+                                  cost_sse_weight=TRADEOFF_COST_SSE_WEIGHT)
     print(f"num algorithms = {len(algorithms)}")
     for algo in algorithms:
         print(f" - {algo.name}")
