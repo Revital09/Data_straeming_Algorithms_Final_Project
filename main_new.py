@@ -31,10 +31,11 @@ SYNTHETIC_DATASET_NAMES = ["blobs", "anisotropic", "high_dim_sparseish"]
 REAL_DATASET_NAMES = ["real_iris", "real_covertype", "real_mnist_pca50"]
 
 
-# Match the tuned-algorithm selection rule: prioritize NMI, then runtime and memory.
-TRADEOFF_QUALITY_WEIGHT = 0.5
+# Match the tuned-algorithm selection rule: prioritize NMI, then runtime, memory, and SSE.
+TRADEOFF_QUALITY_WEIGHT = 0.25
 TRADEOFF_RUNTIME_WEIGHT = 0.25
 TRADEOFF_MEMORY_WEIGHT = 0.25
+TRADEOFF_COST_SSE_WEIGHT = 0.25
 
 
 def ensure_dir(path: str) -> None:
@@ -225,8 +226,8 @@ def build_summary_overall(rows_raw: List[Dict[str, Any]]) -> List[Dict[str, Any]
     Includes:
       - means/stds for runtime, memory, SSE, ratio, SSE-based quality-loss%, ARI, NMI
       - speedup_vs_kmeans (based on overall kmeans runtime mean)
-      - NMI/runtime/memory tradeoff score and rank using the tuned selection strategy
-      - tradeoff_quality_loss_pct: distance from the best tradeoff score
+      - NMI/runtime/memory/SSE tradeoff score and rank using the tuned selection strategy
+      - tradeoff_quality_loss_pct: distance from the best NMI/runtime/memory/SSE tradeoff score
     """
     algos = sorted({r["algorithm"] for r in rows_raw})
     per_algo: List[Dict[str, Any]] = []
@@ -301,9 +302,11 @@ def build_summary_overall(rows_raw: List[Dict[str, Any]]) -> List[Dict[str, Any]
             quality_col="nmi_mean",
             runtime_col="runtime_sec_mean",
             memory_col="memory_mean",
+            cost_sse_col="cost_sse_mean",
             quality_weight=TRADEOFF_QUALITY_WEIGHT,
             runtime_weight=TRADEOFF_RUNTIME_WEIGHT,
             memory_weight=TRADEOFF_MEMORY_WEIGHT,
+            cost_sse_weight=TRADEOFF_COST_SSE_WEIGHT,
         )
 
         best_tradeoff = (
@@ -315,6 +318,7 @@ def build_summary_overall(rows_raw: List[Dict[str, Any]]) -> List[Dict[str, Any]
             TRADEOFF_QUALITY_WEIGHT
             + TRADEOFF_RUNTIME_WEIGHT
             + TRADEOFF_MEMORY_WEIGHT
+            + TRADEOFF_COST_SSE_WEIGHT
         )
 
         ranked_rows = ranked_df.to_dict("records")
@@ -344,15 +348,22 @@ def build_summary_overall(rows_raw: List[Dict[str, Any]]) -> List[Dict[str, Any]
             sp = safe_float(r["speedup_vs_kmeans"])
             nmi_mean = safe_float(r["nmi_mean"])
             mem_mean = safe_float(r["memory_mean"])
+            sse_mean = safe_float(r["cost_sse_mean"])
 
-            if np.isfinite(tradeoff) and np.isfinite(nmi_mean) and np.isfinite(sp) and np.isfinite(mem_mean):
+            if (
+                np.isfinite(tradeoff)
+                and np.isfinite(nmi_mean)
+                and np.isfinite(sp)
+                and np.isfinite(mem_mean)
+                and np.isfinite(sse_mean)
+            ):
                 r["explanation_en"] = (
-                    f"NMI/runtime/memory tradeoff qloss: {r['tradeoff_quality_loss_pct']:.2f}% "
-                    f"(0% is best). Mean NMI={nmi_mean:.4f}, speedup vs kmeans={sp:.2f}x, "
-                    f"mean memory={mem_mean:.2f}."
+                    f"NMI/runtime/memory/SSE tradeoff qloss: {r['tradeoff_quality_loss_pct']:.2f}% "
+                    f"(0% is best). Mean NMI={nmi_mean:.4f}, mean SSE={sse_mean:.4f}, "
+                    f"speedup vs kmeans={sp:.2f}x, mean memory={mem_mean:.2f}."
                 )
             else:
-                r["explanation_en"] = "Insufficient data to compute the NMI/runtime/memory tradeoff."
+                r["explanation_en"] = "Insufficient data to compute the NMI/runtime/memory/SSE tradeoff."
 
     return per_algo
 

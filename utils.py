@@ -138,19 +138,22 @@ def minmax_normalize(s: pd.Series) -> pd.Series:
 
 def pick_best_overall(
     agg: pd.DataFrame,
-    quality_col: str = "quality_mean",
+    quality_col: str = "nmi_mean",
     runtime_col: str = "runtime_sec_mean",
     memory_col: str = "memory_mean",
-    quality_weight: float = 0.5,
+    cost_sse_col: str = "cost_sse_mean",
+    quality_weight: float = 0.25,
     runtime_weight: float = 0.25,
     memory_weight: float = 0.25,
+    cost_sse_weight: float = 0.25,
 ):
     """
     Rank parameter combinations by a weighted tradeoff score.
 
-    Higher quality is better.
+    Higher quality/NMI is better.
     Lower runtime is better.
     Lower memory is better.
+    Lower SSE cost is better.
     """
 
     df = agg.copy()
@@ -158,16 +161,18 @@ def pick_best_overall(
     df["quality_norm"] = minmax_normalize(df[quality_col])
     df["runtime_norm"] = minmax_normalize(df[runtime_col])
     df["memory_norm"] = minmax_normalize(df[memory_col])
+    df["cost_sse_norm"] = minmax_normalize(df[cost_sse_col])
 
     df["tradeoff_score"] = (
         quality_weight * df["quality_norm"]
         - runtime_weight * df["runtime_norm"]
         - memory_weight * df["memory_norm"]
+        - cost_sse_weight * df["cost_sse_norm"]
     )
 
     df = df.sort_values(
-        by=["tradeoff_score", quality_col, runtime_col, memory_col],
-        ascending=[False, False, True, True],
+        by=["tradeoff_score", quality_col, cost_sse_col, runtime_col, memory_col],
+        ascending=[False, False, True, True, True],
     ).reset_index(drop=True)
 
     best_one = df.head(1).copy()

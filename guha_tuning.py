@@ -18,9 +18,10 @@ def tune_guha_parameters(
     chunk_size: int = 4096,
     m_factor_values=(1.0, 1.5, 2.0, 3.0, 4.0, 5.0),
     seeds=(42, 77, 211),
-    quality_weight: float = 0.5,
+    quality_weight: float = 0.25,
     runtime_weight: float = 0.25,
     memory_weight: float = 0.25,
+    cost_sse_weight: float = 0.25,
 ):
     """
     Runs Guha_Stream_KMeans for every m_factor value, aggregates metrics across
@@ -104,12 +105,14 @@ def tune_guha_parameters(
 
     scored_df, best_one_df = pick_best_overall(
         agg=agg,
-        quality_col="quality_mean",
+        quality_col="nmi_mean",
         runtime_col="runtime_sec_mean",
         memory_col="memory_mean",
+        cost_sse_col="cost_sse_mean",
         quality_weight=quality_weight,
         runtime_weight=runtime_weight,
         memory_weight=memory_weight,
+        cost_sse_weight=cost_sse_weight,
     )
 
     scored_df.to_csv(os.path.join(output_dir, "guha_scored_results.csv"), index=False)
@@ -121,39 +124,39 @@ def tune_guha_parameters(
     best_row = best_one_df.iloc[0]
 
     plt.figure(figsize=(8, 6))
-    plt.scatter(scored_df["memory_mean"], scored_df["quality_mean"])
+    plt.scatter(scored_df["memory_mean"], scored_df["nmi_mean"])
     plt.scatter(
         [best_row["memory_mean"]],
-        [best_row["quality_mean"]],
+        [best_row["nmi_mean"]],
         marker="x",
         s=120,
     )
     plt.annotate(
         f"BEST m_factor={best_row['m_factor']}",
-        (best_row["memory_mean"], best_row["quality_mean"]),
+        (best_row["memory_mean"], best_row["nmi_mean"]),
     )
     plt.xlabel("Memory usage (bytes, mean)")
-    plt.ylabel("Quality (mean)")
-    plt.title("Guha tuning: Memory usage vs Quality")
+    plt.ylabel("NMI (mean)")
+    plt.title("Guha tuning: Memory usage vs NMI")
     plt.tight_layout()
     plt.savefig(os.path.join(output_dir, "memory_vs_quality.png"), dpi=150)
     plt.close()
 
     plt.figure(figsize=(8, 6))
-    plt.scatter(scored_df["runtime_sec_mean"], scored_df["quality_mean"])
+    plt.scatter(scored_df["runtime_sec_mean"], scored_df["nmi_mean"])
     plt.scatter(
         [best_row["runtime_sec_mean"]],
-        [best_row["quality_mean"]],
+        [best_row["nmi_mean"]],
         marker="x",
         s=120,
     )
     plt.annotate(
         f"BEST m_factor={best_row['m_factor']}",
-        (best_row["runtime_sec_mean"], best_row["quality_mean"]),
+        (best_row["runtime_sec_mean"], best_row["nmi_mean"]),
     )
     plt.xlabel("Runtime (sec, mean)")
-    plt.ylabel("Quality (mean)")
-    plt.title("Guha tuning: Runtime vs Quality")
+    plt.ylabel("NMI (mean)")
+    plt.title("Guha tuning: Runtime vs NMI")
     plt.tight_layout()
     plt.savefig(os.path.join(output_dir, "runtime_vs_quality.png"), dpi=150)
     plt.close()
@@ -180,9 +183,10 @@ def main():
         chunk_size=4096,
         m_factor_values=(1.0, 2.0, 3.0, 4.0, 5.0),
         seeds=(42, 77, 211),
-        quality_weight=0.5,
+        quality_weight=0.25,
         runtime_weight=0.25,
         memory_weight=0.25,
+        cost_sse_weight=0.25,
     )
 
     print("Best overall parameter combination:")

@@ -16,9 +16,10 @@ from sklearn.datasets import make_blobs
 
 def tuned_algorithms(
     seeds=(42, 77, 211),
-    quality_weight=0.5,
+    quality_weight=0.25,
     runtime_weight=0.25,
-    memory_weight=0.25
+    memory_weight=0.25,
+    cost_sse_weight=0.25,
 ) -> list[Algo]:
     """
     Return the best parameters for each algorithm, based on the tuning results.
@@ -48,6 +49,7 @@ def tuned_algorithms(
         quality_weight=quality_weight,
         runtime_weight=runtime_weight,
         memory_weight=memory_weight,
+        cost_sse_weight=cost_sse_weight,
     )
     algos.append(Ailon_Coreset(chunk_size=8192,coreset_factor=ailon_df.iloc[0]["coreset_factor"],
                                 repeat_factor=ailon_df.iloc[0]["repeat_factor"]))
@@ -64,6 +66,7 @@ def tuned_algorithms(
         quality_weight=quality_weight,
         runtime_weight=runtime_weight,
         memory_weight=memory_weight,
+        cost_sse_weight=cost_sse_weight,
     )
     print(f"The best parameters for Boutsidis are: eps={boutsidis_df.iloc[0]['eps']}, c2={boutsidis_df.iloc[0]['c2']}")
     algos.append(Boutsidis_Streaming(eps=boutsidis_df.iloc[0]["eps"], c2=boutsidis_df.iloc[0]["c2"], chunk_size=8192))
@@ -79,6 +82,7 @@ def tuned_algorithms(
         quality_weight=quality_weight,
         runtime_weight=runtime_weight,
         memory_weight=memory_weight,
+        cost_sse_weight=cost_sse_weight,
     )
     print(f"The best parameter for Guha is: m_factor={guha_df.iloc[0]['m_factor']}")
     algos.append(Guha_Stream_KMeans(chunk_size=8192, m_factor=guha_df.iloc[0]["m_factor"]))
@@ -95,6 +99,7 @@ def tuned_algorithms(
         quality_weight=quality_weight,
         runtime_weight=runtime_weight,
         memory_weight=memory_weight,
+        cost_sse_weight=cost_sse_weight,
     )
     print(f"The best parameters for Charikar are: beta={charikar_df.iloc[0]['beta']}, gamma={charikar_df.iloc[0]['gamma']}")
     algos.append(Charikar_KMeans(beta=charikar_df.iloc[0]["beta"], gamma=charikar_df.iloc[0]["gamma"], chunk_size=8192))
