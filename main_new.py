@@ -12,7 +12,7 @@ import pandas as pd
 from results import Algo
 from tuned_utils import tuned_algorithms
 from utils import set_seed, pick_best_overall
-from data_new2 import make_real_datasets, make_synthetic_datasets
+from data import make_real_datasets, make_synthetic_datasets
 
 
 OUTPUT_DIR = "results_final"
