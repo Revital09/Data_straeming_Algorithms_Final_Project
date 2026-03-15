@@ -413,7 +413,7 @@ def main():
                         )
                     )
 
-            print(f"Completed synthetic dataset={dataset_name} for n={n}, d={d}, k={k}")
+            print(f"\nCompleted synthetic dataset={dataset_name} for n={n}, d={d}, k={k}")
 
     # real
     rng_real = set_seed(999)
