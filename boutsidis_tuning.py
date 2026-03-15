@@ -28,20 +28,6 @@ def tune_boutsidis_parameters(
     memory_weight: float = 0.25,
     cost_sse_weight: float = 0.25,
 ):
-    """
-    Runs Boutsidis_Streaming for every (eps, c2) combination, aggregates metrics
-    across seeds, ranks them by one overall score, saves CSVs and graphs, and
-    returns the single best overall combination.
-
-    Saved files in output_dir:
-      - boutsidis_all_results.csv
-      - boutsidis_aggregated_results.csv
-      - boutsidis_scored_results.csv
-      - boutsidis_best_overall.csv
-      - best_overall.json
-      - memory_vs_quality.png
-      - runtime_vs_quality.png
-    """
     os.makedirs(output_dir, exist_ok=True)
 
     rows = []

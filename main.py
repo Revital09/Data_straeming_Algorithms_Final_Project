@@ -31,7 +31,6 @@ SYNTHETIC_DATASET_NAMES = ["blobs", "anisotropic", "high_dim_sparseish"]
 REAL_DATASET_NAMES = ["real_iris", "real_covertype", "real_mnist_pca50"]
 
 
-# Match the tuned-algorithm selection rule: prioritize NMI, then runtime, memory, and SSE.
 TRADEOFF_QUALITY_WEIGHT = 0.25
 TRADEOFF_RUNTIME_WEIGHT = 0.25
 TRADEOFF_MEMORY_WEIGHT = 0.25
@@ -220,15 +219,7 @@ def aggregate_rows(rows: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     return out
 
 def build_summary_overall(rows_raw: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-    """
-    One row per algorithm over ALL runs.
-
-    Includes:
-      - means/stds for runtime, memory, SSE, ratio, SSE-based quality-loss%, ARI, NMI
-      - speedup_vs_kmeans (based on overall kmeans runtime mean)
-      - NMI/runtime/memory/SSE tradeoff score and rank using the tuned selection strategy
-      - tradeoff_quality_loss_pct: distance from the best NMI/runtime/memory/SSE tradeoff score
-    """
+    
     algos = sorted({r["algorithm"] for r in rows_raw})
     per_algo: List[Dict[str, Any]] = []
 

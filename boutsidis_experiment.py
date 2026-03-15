@@ -18,7 +18,6 @@ from boutsidis_streaming import (
 )
 
 
-# Helpers
 def choose_r(d: int, k: int, eps: float, c2: float, r_min: int = 10) -> int:
     algo = Boutsidis_Streaming(eps=eps, c2=c2, r_min=r_min)
     return algo._choose_r(d, k)

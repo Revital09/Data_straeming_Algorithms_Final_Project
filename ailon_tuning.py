@@ -22,20 +22,7 @@ def tune_ailon_parameters(
     memory_weight: float = 0.25,
     cost_sse_weight: float = 0.25,
 ):
-    """
-    Runs Ailon_Coreset for every (coreset_factor, repeat_factor) combination,
-    aggregates metrics across seeds, ranks them by one overall score,
-    saves CSVs and graphs, and returns the single best overall combination.
 
-    Saved files in output_dir:
-      - ailon_all_results.csv
-      - ailon_aggregated_results.csv
-      - ailon_scored_results.csv
-      - ailon_best_overall.csv
-      - best_overall.json
-      - memory_vs_quality.png
-      - runtime_vs_quality.png
-    """
     os.makedirs(output_dir, exist_ok=True)
 
     rows = []

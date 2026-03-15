@@ -21,14 +21,7 @@ def tuned_algorithms(
     memory_weight=0.25,
     cost_sse_weight=0.25,
 ) -> list[Algo]:
-    """
-    Return the best parameters for each algorithm, based on the tuning results.
-
-    Priority:
-    1) NMI
-    2) ARI
-    3) negative SSE
-    """ 
+    
     d = 10
     n = 10_000
     X, y = make_blobs(n_samples=n, centers=8, n_features=2, cluster_std=1.5, random_state=321)

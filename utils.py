@@ -105,14 +105,7 @@ def compress_coreset(
 
     
 def extract_quality(result: Result) -> float:
-    """
-    Higher is better.
-
-    Priority:
-    1) NMI
-    2) ARI
-    3) negative SSE
-    """
+    
     if result.nmi is not None:
         return float(result.nmi)
 
@@ -123,9 +116,7 @@ def extract_quality(result: Result) -> float:
 
 
 def minmax_normalize(s: pd.Series) -> pd.Series:
-    """
-    Normalize series to [0,1]
-    """
+    
     s = s.astype(float)
     mn = s.min()
     mx = s.max()
@@ -147,15 +138,6 @@ def pick_best_overall(
     memory_weight: float = 0.25,
     cost_sse_weight: float = 0.25,
 ):
-    """
-    Rank parameter combinations by a weighted tradeoff score.
-
-    Higher quality/NMI is better.
-    Lower runtime is better.
-    Lower memory is better.
-    Lower SSE cost is better.
-    """
-
     df = agg.copy()
 
     df["quality_norm"] = minmax_normalize(df[quality_col])

@@ -33,9 +33,6 @@ def _weighted_kmeans_centers(
 
 
 class Guha_Stream_KMeans(Algo):
-    """
-    STREAM K-means (Guha et al., ICDE'02) - KMeans instantiation of the STREAM framework.
-    """
 
     name = "[Guha2002] Streaming k-means"
 

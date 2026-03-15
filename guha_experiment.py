@@ -20,9 +20,6 @@ def make_synthetic_stream_dataset(
     k_true: int = 8,
     seed: int = 321,
 ):
-    """
-    Synthetic dataset for controlled Guha experiments.
-    """
     X, y = make_blobs(
         n_samples=n,
         centers=k_true,

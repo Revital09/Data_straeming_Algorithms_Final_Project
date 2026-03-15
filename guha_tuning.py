@@ -23,20 +23,6 @@ def tune_guha_parameters(
     memory_weight: float = 0.25,
     cost_sse_weight: float = 0.25,
 ):
-    """
-    Runs Guha_Stream_KMeans for every m_factor value, aggregates metrics across
-    seeds, ranks them by one overall score, saves CSVs and graphs, and returns
-    the single best overall combination.
-
-    Saved files in output_dir:
-      - guha_all_results.csv
-      - guha_aggregated_results.csv
-      - guha_scored_results.csv
-      - guha_best_overall.csv
-      - best_overall.json
-      - memory_vs_quality.png
-      - runtime_vs_quality.png
-    """
     os.makedirs(output_dir, exist_ok=True)
 
     rows = []

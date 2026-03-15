@@ -13,10 +13,7 @@ from results import Algo, Result
 
 
 def _rademacher_projection_matrix(d: int, r: int, rng: np.random.Generator) -> np.ndarray:
-    """
-    Algorithm 2 in Boutsidis et al. (2014): R_{ij} in {+1/sqrt(r), -1/sqrt(r)} w.p. 1/2 each.
-    Returns a dense float32 matrix (d x r).
-    """
+    
     signs = rng.integers(0, 2, size=(d, r), dtype=np.int8)
     signs = (signs * 2 - 1).astype(np.float32)
     signs *= (1.0 / math.sqrt(r))
@@ -71,10 +68,7 @@ class Boutsidis_Streaming(Algo):
 
     @staticmethod
     def _is_single_pass_iterable(obj: Any) -> bool:
-        """
-        Heuristic: generators/iterators usually return themselves from iter(obj).
-        Re-iterable containers (list, tuple, etc.) return a NEW iterator each time.
-        """
+        
         try:
             it1 = iter(obj)
             it2 = iter(obj)
@@ -185,13 +179,7 @@ class Boutsidis_Streaming(Algo):
         rng: np.random.Generator,
         labels_batches: Optional[Iterable[np.ndarray]] = None,
     ) -> Result:
-        """
-        True streaming API: consumes an iterable of batches.
-
-        SSE policy:
-          - If batches is re-iterable => do a second pass and compute exact SSE vs final centers.
-          - If batches is single-pass => compute an online approximation against current lifted centers.
-        """
+        
         t0 = time.perf_counter()
 
         single_pass = self._is_single_pass_iterable(batches)

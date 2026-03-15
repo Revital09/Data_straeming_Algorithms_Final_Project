@@ -8,7 +8,7 @@ from results import Algo, Result
 
 class Ailon_Coreset(Algo):
     """
-    Ailon, Jaiswal, Monteleoni (2009)-style streaming k-means#
+    Ailon, Jaiswal, Monteleoni (2009)-style streaming k-means
     with tunable summary-size and repetition factors.
 
     Parameters
@@ -18,11 +18,11 @@ class Ailon_Coreset(Algo):
 
     coreset_factor : float
         Controls L = ceil(coreset_factor * log(k)).
-        Larger => more representatives per block => more memory, usually better quality.
+        Larger => more representatives per block => more memory.
 
     repeat_factor : float
         Controls reps = ceil(repeat_factor * log(n_total)).
-        Larger => more repeated k-means# trials => more runtime, usually better quality.
+        Larger => more repeated k-means trials => more runtime.
     """
     name = "[Ailon2009] Streaming k-means"
 

@@ -25,20 +25,6 @@ def tune_charikar_parameters(
     memory_weight: float = 0.25,
     cost_sse_weight: float = 0.25,
 ):
-    """
-    Runs Charikar_KMeans for every (beta, gamma) combination, aggregates metrics
-    across seeds, ranks them by one overall score, saves CSVs and graphs, and
-    returns the single best overall combination.
-
-    Saved files in output_dir:
-      - charikar_all_results.csv
-      - charikar_aggregated_results.csv
-      - charikar_scored_results.csv
-      - charikar_best_overall.csv
-      - best_overall.json
-      - memory_vs_quality.png
-      - runtime_vs_quality.png
-    """
     os.makedirs(output_dir, exist_ok=True)
 
     rows = []
