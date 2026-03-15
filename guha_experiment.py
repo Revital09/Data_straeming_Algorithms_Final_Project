@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 
 from sklearn.datasets import make_blobs
 
-from guha_streaming import Guha_Stream_KMeans
+from guha_streaming_new import Guha_Stream_KMeans
 from utils import extract_quality
 
 
@@ -31,7 +31,6 @@ def make_synthetic_stream_dataset(
         random_state=seed,
     )
 
-    # Linear transform to avoid perfectly spherical blobs
     A = np.array([[0.6, -0.8], [0.4, 0.9]])
     X = X @ A
 
@@ -107,7 +106,9 @@ def save_summary_and_plots(
             nmi_mean=("nmi", "mean"),
             nmi_std=("nmi", "std"),
             summary_points_mean=("summary_points", "mean"),
+            summary_points_std=("summary_points", "std"),
             levels_used_mean=("levels_used", "mean"),
+            levels_used_std=("levels_used", "std"),
             avg_update_ms_mean=("avg_update_ms", "mean"),
             points_seen_mean=("points_seen", "mean"),
         )
@@ -116,7 +117,6 @@ def save_summary_and_plots(
 
     agg.to_csv(os.path.join(output_dir, f"{prefix}_aggregated_results.csv"), index=False)
 
-    # x vs memory
     plt.figure(figsize=(8, 6))
     plt.plot(agg[x_col], agg["memory_mean"], marker="o")
     plt.xlabel(x_col)
@@ -126,7 +126,6 @@ def save_summary_and_plots(
     plt.savefig(os.path.join(output_dir, f"{prefix}_{x_col}_vs_memory.png"), dpi=150)
     plt.close()
 
-    # x vs runtime
     plt.figure(figsize=(8, 6))
     plt.plot(agg[x_col], agg["runtime_sec_mean"], marker="o")
     plt.xlabel(x_col)
@@ -136,7 +135,6 @@ def save_summary_and_plots(
     plt.savefig(os.path.join(output_dir, f"{prefix}_{x_col}_vs_runtime.png"), dpi=150)
     plt.close()
 
-    # x vs quality
     plt.figure(figsize=(8, 6))
     plt.plot(agg[x_col], agg["quality_mean"], marker="o")
     plt.xlabel(x_col)
@@ -161,7 +159,6 @@ def save_summary_and_plots(
     return agg
 
 
-# Experiment 1: Scalability with stream size
 def experiment_stream_size(
     output_dir: str,
     n_values=(5_000, 10_000, 25_000, 50_000, 100_000),
@@ -169,7 +166,7 @@ def experiment_stream_size(
     k_true: int = 8,
     k_algo: int = 8,
     chunk_size: int = 4096,
-    m_factor: float = 2.0,
+    m_factor: float = 6.0,
     seeds=(42, 77, 211),
 ):
     rows = []
@@ -206,11 +203,54 @@ def experiment_stream_size(
     return df_all, agg
 
 
+def experiment_m_factor(
+    output_dir: str,
+    n: int = 50_000,
+    d: int = 10,
+    k_true: int = 8,
+    k_algo: int = 8,
+    chunk_size: int = 4096,
+    m_factors=(4.0, 6.0, 8.0, 10.0, 12.0),
+    seeds=(42, 77, 211),
+):
+    rows = []
+
+    X, y = make_synthetic_stream_dataset(
+        n=n,
+        d=d,
+        k_true=k_true,
+        seed=321,
+    )
+
+    for m_factor in m_factors:
+        for seed in seeds:
+            row = run_single_guha(
+                X=X,
+                y=y,
+                k=k_algo,
+                seed=seed,
+                chunk_size=chunk_size,
+                m_factor=m_factor,
+            )
+            rows.append(row)
+
+        print(f"Completed m-factor experiment for m_factor={m_factor}")
+
+    df_all = pd.DataFrame(rows)
+    agg = save_summary_and_plots(
+        df_all=df_all,
+        group_cols=["m_factor", "m_summary"],
+        output_dir=output_dir,
+        prefix="guha_m_factor",
+        x_col="m_factor",
+    )
+    return df_all, agg
+
+
 def main():
     base_output_dir = "output_algorithms/guha/guha_assumption"
     os.makedirs(base_output_dir, exist_ok=True)
 
-    # Check scalability with stream size
     experiment_stream_size(
         output_dir=os.path.join(base_output_dir, "stream_size"),
         n_values=(5_000, 10_000, 25_000, 50_000, 100_000),
@@ -218,12 +258,22 @@ def main():
         k_true=8,
         k_algo=8,
         chunk_size=4096,
-        m_factor=2.0,
+        m_factor=6.0,
         seeds=(42, 77, 211),
     )
 
+    experiment_m_factor(
+        output_dir=os.path.join(base_output_dir, "m_factor"),
+        n=50_000,
+        d=10,
+        k_true=8,
+        k_algo=8,
+        chunk_size=4096,
+        m_factors=(4.0, 6.0, 8.0, 10.0, 12.0),
+        seeds=(42, 77, 211),
+    )
 
-    print("Guha experiment completed.")
+    print("Guha experiments completed.")
 
 
 if __name__ == "__main__":

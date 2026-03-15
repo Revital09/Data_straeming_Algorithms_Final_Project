@@ -1,0 +1,9 @@
+{
+  "prefix": "guha_m_factor",
+  "num_runs": 15,
+  "grouped_by": [
+    "m_factor",
+    "m_summary"
+  ],
+  "x_col": "m_factor"
+}
